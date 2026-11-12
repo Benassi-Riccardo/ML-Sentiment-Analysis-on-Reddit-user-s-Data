@@ -1,0 +1,24 @@
+# Environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Data (download from Kaggle; see README)
+redditDataset.pkl
+Dataset.csv
+processed_dataset.csv
+
+# Experiment tracking output
+mlruns/
+mlflow.db
+/confusion_matrix.png
+
+# Personal notes and legacy exploration (not part of the pipeline)
+Feature to Implement.docx
+Data Loading and EDA
+reddit-sentiment-analysis.ipynb
+
+# Local tool state
+.omc/

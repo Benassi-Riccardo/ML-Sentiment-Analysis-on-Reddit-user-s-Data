@@ -1,0 +1,12 @@
+fastapi>=0.100.0
+uvicorn>=0.22.0
+pydantic>=2.0
+scikit-learn==1.9.0
+joblib>=1.3.0
+nltk>=3.8.1
+emoji>=2.8.0
+vaderSentiment>=3.3.2
+pandas>=2.0.0
+mlflow>=3.0.0
+matplotlib>=3.7.0
+seaborn>=0.13.0
