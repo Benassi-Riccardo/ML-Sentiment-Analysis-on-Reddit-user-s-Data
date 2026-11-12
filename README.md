@@ -58,6 +58,8 @@ the model never predicted "neutral" (macro F1 0.44).
 ![Confusion matrix](docs/confusion_matrix.png)
 
 **Known limitations**
+- English only. If none of the input words are in the training vocabulary (for example, Italian
+  text), the API returns HTTP 422 instead of guessing.
 - About 3.6k training examples is small for bag-of-words. For example, "not good, terrible news"
   is currently predicted as positive.
 - Neutral is under-represented (~10%) and remains the weakest class.

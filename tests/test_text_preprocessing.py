@@ -79,6 +79,14 @@ class ApiTests(unittest.TestCase):
         self.assertGreater(response.confidence, 0.0)
         self.assertLessEqual(response.confidence, 1.0)
 
+    def test_predict_rejects_text_with_no_known_words(self) -> None:
+        import app
+        from fastapi import HTTPException
+
+        with self.assertRaises(HTTPException) as raised:
+            app.predict(app.PredictRequest(text="è tutto fantastico, perfetto"))
+        self.assertEqual(raised.exception.status_code, 422)
+
 
 if __name__ == "__main__":
     unittest.main()

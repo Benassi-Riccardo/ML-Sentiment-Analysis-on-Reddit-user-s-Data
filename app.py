@@ -56,6 +56,13 @@ def predict(payload: PredictRequest) -> PredictResponse:
             status_code=400,
             detail="Text input contains no usable words after cleaning.",
         )
+    # With no known words the features are all zero and the model would just guess its prior.
+    if model.named_steps["tfidf"].transform([cleaned_text]).nnz == 0:
+        raise HTTPException(
+            status_code=422,
+            detail="None of these words are in the model's vocabulary. "
+            "The model was trained on English Reddit posts only.",
+        )
     # The saved scikit-learn pipeline applies TF-IDF before classification.
     probabilities = model.predict_proba([cleaned_text])[0]
     best_index = int(probabilities.argmax())
