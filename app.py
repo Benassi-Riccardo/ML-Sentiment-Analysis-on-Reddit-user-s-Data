@@ -36,6 +36,7 @@ class PredictResponse(BaseModel):
     raw_text: str
     cleaned_text: str
     predicted_sentiment: str
+    confidence: float
 
 
 @app.get("/")
@@ -46,7 +47,7 @@ def health_check() -> dict[str, str | bool]:
 
 @app.post("/predict", response_model=PredictResponse)
 def predict(payload: PredictRequest) -> PredictResponse:
-    """Predict positive, neutral, or negative sentiment for submitted text."""
+    """Predict positive, neutral, or negative sentiment and its probability."""
     # Normalize request text to match the model's training features.
     cleaned_text = clean_and_preprocess(payload.text)
     # Reject inputs that contain no words the model can use.
@@ -56,10 +57,12 @@ def predict(payload: PredictRequest) -> PredictResponse:
             detail="Text input contains no usable words after cleaning.",
         )
     # The saved scikit-learn pipeline applies TF-IDF before classification.
-    prediction = model.predict([cleaned_text])[0]
+    probabilities = model.predict_proba([cleaned_text])[0]
+    best_index = int(probabilities.argmax())
     # Return both the original text and the model's predicted sentiment.
     return PredictResponse(
         raw_text=payload.text,
         cleaned_text=cleaned_text,
-        predicted_sentiment=str(prediction),
+        predicted_sentiment=str(model.classes_[best_index]),
+        confidence=round(float(probabilities[best_index]), 4),
     )

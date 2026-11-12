@@ -1,5 +1,7 @@
 # Reddit Sentiment Analysis
 
+[![CI](https://github.com/Benassi-Riccardo/ML-Sentiment-Analysis-on-Reddit-user-s-Data/actions/workflows/deploy.yml/badge.svg)](https://github.com/Benassi-Riccardo/ML-Sentiment-Analysis-on-Reddit-user-s-Data/actions/workflows/deploy.yml)
+
 An end-to-end NLP pipeline that classifies Reddit posts as **positive**, **neutral** or **negative**,
 from raw data to a containerised REST API with automatic deployment.
 
@@ -86,7 +88,7 @@ curl -X POST http://127.0.0.1:8000/predict -H "Content-Type: application/json" -
 ```
 
 ```json
-{"raw_text": "I love this, best day ever!", "cleaned_text": "love best day ever", "predicted_sentiment": "positive"}
+{"raw_text": "I love this, best day ever!", "cleaned_text": "love best day ever", "predicted_sentiment": "positive", "confidence": 0.XX}
 ```
 
 The trained `sentiment_model.pkl` (~300 KB) is committed so the Docker image can serve without

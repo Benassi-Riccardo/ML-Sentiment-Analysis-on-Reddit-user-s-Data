@@ -43,5 +43,42 @@ class DataTransformationTests(unittest.TestCase):
         self.assertEqual(result["text"].tolist(), ["I love it", "I hate it"])
 
 
+class GoldEvaluationTests(unittest.TestCase):
+    """Check the human-label comparison used for the README results."""
+
+    def test_scores_each_method_and_rejects_bad_labels(self) -> None:
+        import pandas as pd
+
+        from src.gold_evaluation import score_against_gold
+
+        class AlwaysNegative:
+            def predict(self, texts):
+                return ["negative"] * len(texts)
+
+        gold = pd.DataFrame(
+            {"text": ["I love it", "I hate it"], "human_label": ["Positive ", "negative"]}
+        )
+        results = score_against_gold(gold, AlwaysNegative()).set_index("method")
+        self.assertEqual(results.loc["Majority class (always positive)", "accuracy"], 0.5)
+        self.assertEqual(results.loc["VADER (rule-based)", "accuracy"], 1.0)
+        self.assertEqual(results.loc["TF-IDF + logistic regression", "accuracy"], 0.5)
+
+        gold.loc[0, "human_label"] = "happy"
+        with self.assertRaises(ValueError):
+            score_against_gold(gold, AlwaysNegative())
+
+
+class ApiTests(unittest.TestCase):
+    """Check the prediction endpoint returns a label with a probability."""
+
+    def test_predict_returns_label_and_confidence(self) -> None:
+        import app
+
+        response = app.predict(app.PredictRequest(text="I love this, best day ever!"))
+        self.assertIn(response.predicted_sentiment, {"negative", "neutral", "positive"})
+        self.assertGreater(response.confidence, 0.0)
+        self.assertLessEqual(response.confidence, 1.0)
+
+
 if __name__ == "__main__":
     unittest.main()

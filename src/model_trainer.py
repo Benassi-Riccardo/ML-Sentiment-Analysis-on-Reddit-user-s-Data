@@ -41,12 +41,10 @@ MAX_FEATURES = 5000
 NGRAM_RANGE = (1, 2)
 
 
-def train_model(
+def load_split(
     input_path: Path = DEFAULT_INPUT_PATH,
-    model_path: Path = DEFAULT_MODEL_PATH,
-    confusion_matrix_path: Path = DEFAULT_CONFUSION_MATRIX_PATH,
-) -> Pipeline:
-    """Fit and evaluate a text-classification pipeline, then save and log it."""
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Load the processed CSV, drop unusable rows, and return (train, test) rows."""
     dataframe = pd.read_csv(input_path)
     required_columns = {"clean_text", "sentiment"}
     missing_columns = required_columns - set(dataframe.columns)
@@ -66,13 +64,24 @@ def train_model(
             "Training requires positive, neutral, and negative examples."
         )
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        dataframe["clean_text"],
-        dataframe["sentiment"],
+    train_rows, test_rows = train_test_split(
+        dataframe,
         test_size=TEST_SIZE,
         random_state=RANDOM_STATE,
         stratify=dataframe["sentiment"],
     )
+    return train_rows, test_rows
+
+
+def train_model(
+    input_path: Path = DEFAULT_INPUT_PATH,
+    model_path: Path = DEFAULT_MODEL_PATH,
+    confusion_matrix_path: Path = DEFAULT_CONFUSION_MATRIX_PATH,
+) -> Pipeline:
+    """Fit and evaluate a text-classification pipeline, then save and log it."""
+    train_rows, test_rows = load_split(input_path)
+    X_train, y_train = train_rows["clean_text"], train_rows["sentiment"]
+    X_test, y_test = test_rows["clean_text"], test_rows["sentiment"]
 
     model = Pipeline(
         steps=[
