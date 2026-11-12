@@ -57,6 +57,32 @@ the model never predicted "neutral" (macro F1 0.44).
 
 ![Confusion matrix](docs/confusion_matrix.png)
 
+### Results vs human labels (195 posts)
+
+The numbers above only measure agreement with VADER. To check *real* sentiment, 200 random
+test-set posts (never seen in training) were labelled in
+[`data/gold_labels.csv`](data/gold_labels.csv). The labels were **model-assisted**: an LLM
+suggested a label with a one-line reason, and the author reviewed every row. 5 posts (bots and
+unreadable text) were marked `skip` and excluded. Reproduce with
+`python -m src.gold_evaluation evaluate`.
+
+| Method | Accuracy | Macro F1 |
+|---|---|---|
+| Training majority class (always "positive") | 0.12 | 0.07 |
+| VADER (the labeller used for training) | 0.39 | 0.34 |
+| TF-IDF + logistic regression (this model) | 0.38 | 0.34 |
+
+**What this shows**
+- **The weak labels are the bottleneck.** VADER calls 47% of these posts positive, but only 12%
+  are positive to a human reader: Reddit comments are mostly critical, sarcastic or matter-of-fact.
+  VADER misses sarcasm ("i love how this article glosses over...") and reads polite-sounding
+  words as positive.
+- **The model faithfully copies VADER's mistakes.** It matches VADER's score almost exactly, so
+  better features or bigger models trained on the same labels would not help.
+- **Per class:** negative F1 0.56, neutral 0.20, positive 0.26. Neutral recall is only 0.13.
+- **The fix is better labels, not a better classifier:** train on human-labelled data, or use a
+  pretrained sentiment model as the labeller.
+
 **Known limitations**
 - English only. If none of the input words are in the training vocabulary (for example, Italian
   text), the API returns HTTP 422 instead of guessing.
@@ -65,8 +91,8 @@ the model never predicted "neutral" (macro F1 0.44).
 - Neutral is under-represented (~10%) and remains the weakest class.
 - Labels are VADER's, so the model cannot be more correct than VADER.
 
-**Next steps:** hand-label a gold test set to measure real accuracy (VADER vs this model), and
-compare against a small transformer such as DistilBERT.
+**Next steps:** compare against a pretrained transformer sentiment model (for example, a
+RoBERTa model fine-tuned on tweets) on the same 195 human-labelled posts.
 
 ## Quick start
 

@@ -1,7 +1,8 @@
 """Evaluate VADER and the trained model against hand-written (human) labels.
 
 Step 1: python -m src.gold_evaluation sample     -> writes data/gold_labels.csv
-Step 2: fill the empty human_label column by hand (positive / neutral / negative)
+Step 2: fill the empty human_label column by hand (positive / neutral / negative,
+        or skip when a post cannot be judged without its thread)
 Step 3: python -m src.gold_evaluation evaluate   -> prints the comparison table
 """
 
@@ -40,7 +41,13 @@ def sample_for_labelling(
     _, test_rows = load_split(input_path)
     sample = test_rows.sample(n=min(sample_size, len(test_rows)), random_state=RANDOM_STATE)
     # VADER's label is left out on purpose so it cannot bias the human labeller.
-    gold = pd.DataFrame({"text": sample["text"].to_numpy(), "human_label": ""})
+    gold = pd.DataFrame(
+        {
+            "text": sample["text"].to_numpy(),
+            "subreddit": sample["subreddit"].to_numpy(),
+            "human_label": "",
+        }
+    )
     gold_path.parent.mkdir(parents=True, exist_ok=True)
     gold.to_csv(gold_path, index=False)
     print(f"Wrote {len(gold)} posts to {gold_path}. Fill in the human_label column.")
@@ -55,7 +62,7 @@ def score_against_gold(gold: pd.DataFrame, model: Any) -> pd.DataFrame:
         raise ValueError(f"human_label must be one of {CLASS_LABELS}; found {invalid}.")
 
     predictions = {
-        "Majority class (always positive)": ["positive"] * len(gold),
+        "Training majority class (always positive)": ["positive"] * len(gold),
         "VADER (rule-based)": gold["text"].apply(label_sentiment).tolist(),
         "TF-IDF + logistic regression": model.predict(
             gold["text"].apply(clean_and_preprocess).tolist()
@@ -80,7 +87,9 @@ def evaluate(
 ) -> pd.DataFrame:
     """Score every labelled row of the gold file and print the comparison."""
     gold = pd.read_csv(gold_path, keep_default_na=False)
-    gold = gold.loc[gold["human_label"].str.strip().ne("")]
+    # Blank rows are not labelled yet; "skip" marks posts that need missing context.
+    labels = gold["human_label"].str.strip().str.lower()
+    gold = gold.loc[~labels.isin(["", "skip"])]
     if gold.empty:
         raise ValueError(f"No rows in {gold_path} have a human_label yet.")
     results = score_against_gold(gold, joblib.load(model_path))

@@ -59,7 +59,7 @@ class GoldEvaluationTests(unittest.TestCase):
             {"text": ["I love it", "I hate it"], "human_label": ["Positive ", "negative"]}
         )
         results = score_against_gold(gold, AlwaysNegative()).set_index("method")
-        self.assertEqual(results.loc["Majority class (always positive)", "accuracy"], 0.5)
+        self.assertEqual(results.loc["Training majority class (always positive)", "accuracy"], 0.5)
         self.assertEqual(results.loc["VADER (rule-based)", "accuracy"], 1.0)
         self.assertEqual(results.loc["TF-IDF + logistic regression", "accuracy"], 0.5)
 
